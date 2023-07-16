@@ -1,0 +1,46 @@
+name: flink-cdc-mysql-mysql
+parallelism: 1
+checkpoint:
+  dir: /Users/flink/checkpoints/Testcheckpoint
+  interval: 60000
+  timeout: 600000
+savepoint:
+  enabled: true
+pipeline:
+  - |
+    CREATE TABLE `user` (
+      id INT,
+      name STRING,
+      age INT,
+      gender STRING,
+      create_time TIMESTAMP(3),
+      update_time TIMESTAMP(3),
+      is_delete INT,
+      PRIMARY KEY (id) NOT ENFORCED
+    ) WITH (
+      'connector' = 'mysql-cdc',
+      'hostname' = 'localhost',
+      'port' = '3306',
+      'username' = 'root',
+      'password' = 'root',
+      'database-name' = 'test',
+      'table-name' = 'user'
+    )
+  - |
+    CREATE TABLE `user_copy` (
+        id INT,
+        name STRING,
+        age INT,
+        gender STRING,
+        create_time TIMESTAMP(3),
+        update_time TIMESTAMP(3),
+        is_delete INT,
+      PRIMARY KEY (id) NOT ENFORCED
+    ) WITH (
+       'connector' = 'jdbc',
+       'url' = 'jdbc:mysql://localhost:3306/test_copy?serverTimezone=Asia/Shanghai&allowMultiQueries=true&autoReconnect=true&failOverReadOnly=false&useUnicode=true&characterEncoding=utf8',
+       'username' = 'root',
+       'password' = 'root',
+       'table-name' = 'user'
+    )
+  - INSERT INTO `user_copy` SELECT id, name, age, gender, create_time, update_time, is_delete FROM `user`
